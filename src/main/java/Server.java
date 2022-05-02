@@ -1,5 +1,8 @@
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -18,21 +21,22 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 public class Server extends Observable {
+	ServerSocket ss;
 	// mongodb database
 	private MongoClient mongo;
 	private MongoDatabase db;
 	private MongoCollection<Document> coll;
 
 	// static database...
-	private static ArrayList<Item> items = new ArrayList<>();
+	private static ArrayList<Item> itemList = new ArrayList<>();
 
 	// uri
 	private String uri = "mongodb+srv://test:test@cluster0.2lpk4.mongodb.net/AuctionDatabase?retryWrites=true&w=majority";
 
 	// record client names
-	private ArrayList<String> clients = new ArrayList<>();
+	private ArrayList<String> clientList = new ArrayList<>();
 
-	private void SetupNetworking() {
+	private void SetupNetworking() throws IOException {
 
 		// Request data from MongoDB database, store on server
 		try (MongoClient mongoClient = MongoClients.create(uri)) {
@@ -45,15 +49,15 @@ public class Server extends Observable {
 			while (iter.hasNext()) {
 				Document doc = iter.next();
 				String s = doc.toJson();
-				System.out.println(s);
+//				System.out.println(s);
 
 				// convert Json to Java object
 				ObjectMapper mapper = new ObjectMapper();
 				try {
 					Item it = mapper.readValue(s, Item.class);
 
-					// populate items with mongodb data
-					items.add(it);
+					// Store items in list
+					itemList.add(it);
 
 				} catch (JsonMappingException e) {
 					// TODO Auto-generated catch block
@@ -66,20 +70,22 @@ public class Server extends Observable {
 			}
 		}
 
-		int port = 8000;
+		int port = 5000;
 
 		try {
-			ServerSocket ss = new ServerSocket(port);
+			ss = new ServerSocket(port);
 			System.out.println("Server started waiting for connection !");
 
 			while (true) {
 				// Waiting for connections ...
 				Socket s = ss.accept();
 
-				// Print the number of connected clients
-				System.out.println("New connection !" + clients.size());
+				// Add new Client[info] to client list...
 
-				// send auction items data to clients
+				// Print the number of connected clients
+				System.out.println("New connection !" + clientList.size());
+
+				// Send auction items data to clients...
 
 				// Create new thread for that client
 				Thread t = new Thread(new ClientHandler(s));
@@ -91,19 +97,18 @@ public class Server extends Observable {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			ss.close();
 		}
-
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		Server server = new Server();
 		server.SetupNetworking();
-
 //		server.populateItems();
 	}
 
 	class ClientHandler implements Runnable {
-		private ObjectInputStream reader;
 		private Socket s;
 //		private ClientObserver writer; // See Canvas. Extends ObjectOutputStream,
 
@@ -119,6 +124,22 @@ public class Server extends Observable {
 
 		@Override
 		public void run() {
+			try {
+				InputStream is = s.getInputStream();
+				OutputStream os = s.getOutputStream();
+
+				// send clientList + itemList --> client
+
+				ObjectOutputStream toClient = new ObjectOutputStream(os);
+				ObjectInputStream fromClient = new ObjectInputStream(is);
+
+				toClient.writeObject(itemList);
+
+				System.out.println("itemList has been sent to the client");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 		}
 	}
