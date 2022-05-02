@@ -12,7 +12,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -47,15 +51,30 @@ public class Client extends Application {
 //
 	Socket s;
 
+	// Scene
+	Scene scene1;
+	Scene scene2;
+
 	@Override
 	public void start(Stage primaryStage) throws IOException {
 
-		// 1. Welcome page --> Greetings, get users name and password(no authentication)
+		// 1. Welcome scene --> Greetings, get users name and password(no
+		// authentication)
 		VBox layout1 = new VBox(20);
 
 		// logo
-		Label logo = new Label("Virtual Auciton".toUpperCase());
-		logo.setFont(new Font("Times New Roman", 24));
+		Image Image = new Image("auctionlogo.png");
+		ImageView logoImg = new ImageView(Image);
+		logoImg.setFitHeight(100);
+		logoImg.setFitWidth(100);
+		logoImg.setPreserveRatio(true);
+
+		Label logoTxt = new Label("Virtual Auciton".toUpperCase());
+		logoTxt.setFont(new Font("Times New Roman", 15));
+
+		VBox logo = new VBox();
+		logo.setAlignment(Pos.TOP_CENTER);
+		logo.getChildren().addAll(logoImg, logoTxt);
 
 		// name input
 		TextField nameInput = new TextField();
@@ -77,16 +96,54 @@ public class Client extends Application {
 			userPassword = pwInput.getText();
 			System.out.println(userName);
 			System.out.println(userPassword);
+			primaryStage.setScene(scene2);
 		});
 
-		layout1.setPadding(new Insets(20));
-		layout1.setAlignment(Pos.CENTER);
+		layout1.setPadding(new Insets(80));
+		layout1.setAlignment(Pos.TOP_CENTER);
 		layout1.getChildren().addAll(logo, nameInput, pwInput, btn1);
 
-		Scene scene1 = new Scene(layout1, 400, 500);
+		scene1 = new Scene(layout1, 400, 500, Color.WHITE);
+
+		// 2. main scene, controller
+		BorderPane layout2 = new BorderPane();
+		layout2.setPadding(new Insets(20));
+
+		// left -->
+		VBox leftLayout = new VBox(40);
+		// logo
+		Image Image2 = new Image("auctionlogo.png");
+		ImageView logoImg2 = new ImageView(Image);
+		logoImg2.setFitHeight(50);
+		logoImg2.setFitWidth(50);
+		logoImg2.setPreserveRatio(true);
+
+		// bottons
+		VBox btnBox = new VBox(10);
+		Button onGoBtn = new Button("On Going");
+
+		Button compBtn = new Button("Completed");
+
+		btnBox.getChildren().addAll(onGoBtn, compBtn);
+
+		Button exitBtn = new Button("Exit");
+		exitBtn.setPrefWidth(100);
+
+		leftLayout.getChildren().addAll(logoImg2, btnBox, exitBtn);
+
+		// middle --> displaying items
+		VBox midLayout = new VBox();
+
+		// right --> user info
+		VBox rightLayout = new VBox();
+
+		layout2.setLeft(leftLayout);
+		layout2.setCenter(midLayout);
+		layout2.setRight(rightLayout);
+		scene2 = new Scene(layout2, 600, 500);
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
-		primaryStage.setScene(scene1); // Place the scene in the stage
+		primaryStage.setScene(scene2); // Place the scene in the stage
 		primaryStage.show(); // Display the stage
 
 		// Create a socket to connect to the server
