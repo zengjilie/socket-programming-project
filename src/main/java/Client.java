@@ -17,6 +17,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -110,26 +111,46 @@ public class Client extends Application {
 		layout2.setPadding(new Insets(20));
 
 		// left -->
-		VBox leftLayout = new VBox(40);
+		VBox leftLayout = new VBox(80);
+		leftLayout.setPadding(new Insets(0, 10, 0, 0));
+		leftLayout.setStyle("-fx-border-color:black;-fx-border-width:0 1 0 0");
+
 		// logo
 		Image Image2 = new Image("auctionlogo.png");
 		ImageView logoImg2 = new ImageView(Image);
-		logoImg2.setFitHeight(50);
-		logoImg2.setFitWidth(50);
+		logoImg2.setFitHeight(70);
+		logoImg2.setFitWidth(70);
 		logoImg2.setPreserveRatio(true);
+		Label logoTxt2 = new Label("Virtual Auciton".toUpperCase());
+		logoTxt2.setFont(new Font("Times New Roman", 12));
 
-		// bottons
+		VBox logo2 = new VBox();
+		logo2.setAlignment(Pos.CENTER);
+		logo2.getChildren().addAll(logoImg2, logoTxt2);
+
+		// bottons --> switching scene
 		VBox btnBox = new VBox(10);
 		Button onGoBtn = new Button("On Going");
+		onGoBtn.setPrefHeight(100);
+		onGoBtn.setPrefWidth(100);
+
+		Line line = new Line();
+		line.setStartX(0);
+		line.setStartY(0);
+		line.setEndX(100);
+		line.setEndY(0);
 
 		Button compBtn = new Button("Completed");
+		compBtn.setPrefHeight(100);
+		compBtn.setPrefWidth(100);
 
-		btnBox.getChildren().addAll(onGoBtn, compBtn);
+		btnBox.getChildren().addAll(onGoBtn, line, compBtn);
 
+		// butotn --> exit
 		Button exitBtn = new Button("Exit");
 		exitBtn.setPrefWidth(100);
 
-		leftLayout.getChildren().addAll(logoImg2, btnBox, exitBtn);
+		leftLayout.getChildren().addAll(logo2, btnBox, exitBtn);
 
 		// middle --> displaying items
 		VBox midLayout = new VBox();
@@ -141,6 +162,7 @@ public class Client extends Application {
 		layout2.setCenter(midLayout);
 		layout2.setRight(rightLayout);
 		scene2 = new Scene(layout2, 600, 500);
+		scene2.getStylesheets().add("app.css");
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
 		primaryStage.setScene(scene2); // Place the scene in the stage
