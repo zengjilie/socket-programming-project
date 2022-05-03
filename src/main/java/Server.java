@@ -98,6 +98,7 @@ public class Server extends Observable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
+			System.out.println("Server socket closed!");
 			ss.close();
 		}
 	}
@@ -114,7 +115,10 @@ public class Server extends Observable {
 
 //        implements
 //        Observer Socket clientSocket;
-//
+		private InputStream is;
+		private OutputStream os;
+		private ObjectInputStream fromClient;
+		private ObjectOutputStream toClient;
 
 		public ClientHandler(Socket s) {
 			this.s = s;
@@ -125,20 +129,36 @@ public class Server extends Observable {
 		@Override
 		public void run() {
 			try {
-				InputStream is = s.getInputStream();
-				OutputStream os = s.getOutputStream();
+				is = s.getInputStream();
+				os = s.getOutputStream();
 
-				// send clientList + itemList --> client
+				toClient = new ObjectOutputStream(os);
+				fromClient = new ObjectInputStream(is);
 
-				ObjectOutputStream toClient = new ObjectOutputStream(os);
-				ObjectInputStream fromClient = new ObjectInputStream(is);
-
+				// send itemList --> client
 				toClient.writeObject(itemList);
+				System.out.println("itemList has been sent to client!");
 
-				System.out.println("itemList has been sent to the client");
+				// Get client bid info <-- client
+				Bid clientBid = (Bid) fromClient.readObject();
+
+				System.out.println("Got bid info from client!");
+				System.out.println(clientBid.clientName);
+				System.out.println(clientBid.clientBid);
+				System.out.println(clientBid.itemId);
+
+				// Change the info of that item
+				for (Item item : itemList) {
+					if (clientBid.itemId == item.getItemId()) {
+						item.setBid(clientBid.clientBid);
+						item.setBidder(clientBid.clientName);
+					}
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("IO exception!");
+			} catch (ClassNotFoundException e) {
+				System.out.println("Can't find class Bid!");
 			}
 
 		}

@@ -2,7 +2,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -28,7 +30,7 @@ import javafx.stage.Stage;
 public class Client extends Application {
 
 	// client information
-	private String clientName;
+	private String clientName = "Bob";
 	private String clientPassword;
 
 	// when the server update, all clients will get the updates
@@ -67,12 +69,28 @@ public class Client extends Application {
 	public void start(Stage primaryStage) throws IOException {
 
 		// testing data
-		for (int i = 0; i < 10; i++) {
-			Item item = new Item(i, "Papi", i + 10, "Bob",
-					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-			open.add(item);
-			clientItems.add(item);
-			closed.add(item);
+//		for (int i = 0; i < 10; i++) {
+//			Item item = new Item(i, "Papi", i + 10, "Bob",
+//					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+//			open.add(item);
+//			clientItems.add(item);
+//			closed.add(item);
+//		}
+
+		// real data
+		// Create a socket to connect to the server
+		String serverIP = "localhost"; // change [localhost] to actual server IP
+		s = new Socket(serverIP, 5000);
+		System.out.println("New client created!");
+
+		// client <--> server data exchange
+		fromServer = new ObjectInputStream(s.getInputStream());
+		toServer = new ObjectOutputStream(s.getOutputStream());
+
+		try {
+			open = (ArrayList<Item>) fromServer.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 
 		// 1. Welcome scene --> Greetings, get users name and password(no
@@ -204,10 +222,10 @@ public class Client extends Application {
 		// Add item card to midLayout1
 		for (Item item : open) {
 			HBox itemCard = new HBox(20);
+			// id + image + info + button
 			// itemId
 			Text itemId = new Text("Id: " + String.valueOf(item.getItemId()));
 
-			// image + time + highest bid
 			// image
 			Image itemImg = new Image(item.getImage());
 			ImageView itemImage = new ImageView(itemImg);
@@ -215,29 +233,58 @@ public class Client extends Application {
 			itemImage.setFitWidth(150);
 			itemImage.setPreserveRatio(true);
 
-			// time + highest bid
-			VBox itemInfo = new VBox(10);
+			// info
+			VBox itemInfo = new VBox(12);
 			itemInfo.setPadding(new Insets(0, 0, 0, 10));
-
+			itemInfo.setPrefWidth(300);
+			// time
 			Text itemTime = new Text("Remaining Time: " + "05:00");
+			// name
 			Text itemName = new Text(item.getName());
-			Text itemBid = new Text("Highest Bid: " + item.getBid());
-			Text itemBidder = new Text("Highest Bidder: " + "Judy");
+
+			// bid
+			double bid = item.getBid();
+			Locale locale = new Locale("en", "US");
+			NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+			Text itemBid = new Text("Highest Bid: " + formatter.format(bid));
+			// bidder
+			Text itemBidder = new Text("Bidder: " + "N/A");
 			itemInfo.getChildren().addAll(itemTime, itemName, itemBid, itemBidder);
 
 			// Get bid from client
 			VBox bidLayout = new VBox(20);
-			bidLayout.setPadding(new Insets(0, 0, 0, 70));
+			bidLayout.setPadding(new Insets(0, 0, 0, 50));
 			bidLayout.setAlignment(Pos.TOP_RIGHT);
 			// bid input + bid button
+			// bid input
 			TextField bidInput = new TextField();
 			bidInput.setPromptText("Enter your bid");
 			bidInput.setFocusTraversable(false);
 
+			// bid button
 			Button bidBtn = new Button("BID");
 			bidBtn.setPrefWidth(70);
+			// bid warning sign
+			Text bidWarning = new Text();
+			// validate input
+			bidBtn.setOnAction(e -> {
+				try {
+					double bidAmount = Double.parseDouble(bidInput.getText());
+					if (bidAmount <= item.getBid()) {
+						bidWarning.setText("Bid not big enough!");
+					} else {
+						// send bid info to server --> server update all clients
+						Bid newBid = new Bid(item.getItemId(), bidAmount, clientName);
+						toServer.writeObject(newBid);
+					}
+				} catch (NumberFormatException ex) {
+					bidWarning.setText("Input Must Be a Number!");
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			});
 
-			bidLayout.getChildren().addAll(bidInput, bidBtn);
+			bidLayout.getChildren().addAll(bidInput, bidBtn, bidWarning);
 
 			itemCard.getChildren().addAll(itemId, itemImage, itemInfo, bidLayout);
 
@@ -256,10 +303,10 @@ public class Client extends Application {
 		// Add item card to midLayout2
 		for (Item item : closed) {
 			HBox itemCard = new HBox(20);
+			// id + image + info
 			// itemId
 			Text itemId = new Text(String.valueOf("Id: " + item.getItemId()));
 
-			// image + time + highest bid
 			// image
 			Image itemImg = new Image(item.getImage());
 			ImageView itemImage = new ImageView(itemImg);
@@ -267,12 +314,18 @@ public class Client extends Application {
 			itemImage.setFitWidth(150);
 			itemImage.setPreserveRatio(true);
 
-			// time + highest bid
+			// info
+			// highest bid
 			VBox itemInfo = new VBox(10);
 			itemInfo.setPadding(new Insets(0, 0, 0, 10));
-
-			Text itemName = new Text(item.getName());
-			Text itemBid = new Text("Final price: " + item.getBid());
+			// name
+			Text itemName = new Text("Name:" + item.getName());
+			// bid
+			double bid = item.getBid();
+			Locale locale = new Locale("en", "US");
+			NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+			Text itemBid = new Text("Highest Bid: " + formatter.format(bid));
+			// bidder
 			Text itemBidder = new Text("Buyer: " + "Judy");
 			itemInfo.getChildren().addAll(itemName, itemBid, itemBidder);
 
@@ -285,7 +338,7 @@ public class Client extends Application {
 		VBox rightLayout = new VBox(20);
 		rightLayout.setPadding(new Insets(0, 0, 0, 10));
 		// client info
-		Label clientInfo = new Label("Bob");
+		Label clientInfo = new Label(clientName);
 		clientInfo.setFont(new Font("Times New Roman", 20));
 
 		// line
@@ -303,7 +356,7 @@ public class Client extends Application {
 		clListTitle.setFont(new Font("Times New Roman", 20));
 
 		for (Item item : clientItems) {
-			Text itemName = new Text(item.getName());
+			Text itemName = new Text("Name: " + item.getName());
 			// format currency ...
 			Text itemPrice = new Text(String.valueOf(item.getBid()));
 			clientItemList.getChildren().addAll(itemName, itemPrice);
@@ -318,33 +371,17 @@ public class Client extends Application {
 		layout2.setCenter(midLayout);
 
 		layout2.setRight(rightLayout);
-		scene2 = new Scene(layout2, 1000, 600);
+		scene2 = new Scene(layout2, 1200, 600);
 		scene2.getStylesheets().add("app.css");
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
 		primaryStage.setScene(scene2); // Place the scene in the stage
 		primaryStage.show(); // Display the stage
 
-		// Create a socket to connect to the server
-		String serverIP = "localhost"; // change [localhost] to actual IP address
-		s = new Socket(serverIP, 5000);
-		System.out.println("New client created!");
-
-		// client <--> server data exchange
-		fromServer = new ObjectInputStream(s.getInputStream());
-		toServer = new ObjectOutputStream(s.getOutputStream());
-
-		try {
-			open = (ArrayList<Item>) fromServer.readObject();
-
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
 		// decode data from server
-		System.out.println("Closing sockets!");
 		exitBtn.setOnAction(e -> {
 			try {
+				System.out.println("Client socket closed!");
 				s.close();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
@@ -357,4 +394,10 @@ public class Client extends Application {
 	public static void main(String[] args) {
 		launch(args);
 	}
+
+	/**
+	 * 
+	 * @author alex Bid class, send Bid object to the server, and set a new bid
+	 */
+
 }

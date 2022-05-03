@@ -9,14 +9,14 @@ public class Item implements Serializable {
 	private String image; // image url
 	private boolean sold; // default false, if sold --> true
 
-	public Item(int itemId, String name, double bid, String bidder, String image) {
-		this.itemId = itemId;
-		this.name = name;
-		this.bid = bid;
-		this.bidder = bidder;
-		this.image = image;
-		this.sold = false;
-	}
+//	public Item(int itemId, String name, double bid, String bidder, String image) {
+//		this.itemId = itemId;
+//		this.name = name;
+//		this.bid = bid;
+//		this.bidder = bidder;
+//		this.image = image;
+//		this.sold = false;
+//	}
 
 	public String getName() {
 		return name;
@@ -26,19 +26,8 @@ public class Item implements Serializable {
 		return bid;
 	}
 
-	public boolean setBid(int bid, String bidder) {
-		if (!sold) {
-			if (bid > this.bid) {
-				this.bid = bid;
-				this.bidder = bidder;
-
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
+	public void setBid(double bid) {
+		this.bid = bid;
 	}
 
 	public int getItemId() {
@@ -47,6 +36,10 @@ public class Item implements Serializable {
 
 	public void setItemId(int itemId) {
 		this.itemId = itemId;
+	}
+
+	public void setBidder(String bidder) {
+		this.bidder = bidder;
 	}
 
 	public String getBidder() {
