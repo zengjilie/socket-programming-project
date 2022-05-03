@@ -143,19 +143,22 @@ public class Client extends Application {
 		logo2.setAlignment(Pos.CENTER);
 		logo2.getChildren().addAll(logoImg2, logoTxt2);
 
-		// bottons --> switching scene
+		// Bottons --> switching different item lists
 		VBox btnBox = new VBox(10);
 		Button onGoBtn = new Button("Open");
 		onGoBtn.setPrefHeight(100);
 		onGoBtn.setPrefWidth(100);
-
+		// line
 		Line line = new Line();
 		line.setStartX(0);
 		line.setStartY(0);
 		line.setEndX(100);
 		line.setEndY(0);
-
-		Button compBtn = new Button("Complet");
+		// complete button
+		Button compBtn = new Button("Complete");
+		compBtn.setOnAction(e -> {
+			System.out.println("show complete items");
+		});
 		compBtn.setPrefHeight(100);
 		compBtn.setPrefWidth(100);
 
@@ -173,21 +176,75 @@ public class Client extends Application {
 		midLayout.setStyle("-fx-background-color:transparent");
 		midLayout.setPrefHeight(600);
 
-		VBox midLayout1 = new VBox(30); // ongoing
+		// completed item list
+		VBox midLayout2 = new VBox(30);
+		midLayout2.setPadding(new Insets(20));
+
+		// open item list
+		VBox midLayout1 = new VBox(30);
 		midLayout1.setPadding(new Insets(20));
 
-		VBox midLayout2 = new VBox(30); // completed
-
+		// use setContent to change mount/unmount different nodes
 		midLayout.setContent(midLayout1);
 
 		// Ongoing --> display opening items
 		Label og = new Label("Open List".toUpperCase());
 		midLayout1.getChildren().add(og);
-		og.setStyle("-fx-font-family:Time New Roman;-fx-font-size:15");
+		og.setFont(new Font("Times New Roman", 20));
 
 		// Add item card to midLayout1
 		for (Item item : open) {
-			HBox itemCard1 = new HBox(20);
+			HBox itemCard = new HBox(20);
+			// itemId
+			Text itemId = new Text(String.valueOf(item.getItemId()) + ".");
+
+			// image + time + highest bid
+			// image
+			Image itemImg = new Image(item.getImage());
+			ImageView itemImage = new ImageView(itemImg);
+			itemImage.setFitHeight(150);
+			itemImage.setFitWidth(150);
+			itemImage.setPreserveRatio(true);
+
+			// time + highest bid
+			VBox itemInfo = new VBox(10);
+			itemInfo.setPadding(new Insets(0, 0, 0, 10));
+
+			Text itemTime = new Text("Remaining Time: " + "05:00");
+			Text itemName = new Text(item.getName());
+			Text itemBid = new Text("Highest Bid: " + item.getBid());
+			Text itemBidder = new Text("Highest Bidder: " + "Judy");
+			itemInfo.getChildren().addAll(itemTime, itemName, itemBid, itemBidder);
+
+			// Get bid from client
+			VBox bidLayout = new VBox(20);
+			bidLayout.setPadding(new Insets(0, 0, 0, 70));
+			bidLayout.setAlignment(Pos.TOP_RIGHT);
+			// bid input + bid button
+			TextField bidInput = new TextField();
+			bidInput.setPromptText("Enter your bid");
+			bidInput.setFocusTraversable(false);
+
+			Button bidBtn = new Button("BID");
+			bidBtn.setPrefWidth(70);
+
+			bidLayout.getChildren().addAll(bidInput, bidBtn);
+
+			itemCard.getChildren().addAll(itemId, itemImage, itemInfo, bidLayout);
+
+			midLayout1.getChildren().addAll(itemCard);
+		}
+
+		// Completed --> display closed items(History)
+		Label cp = new Label("Complete".toUpperCase());
+//		midLayout.setContent(midLayout2);
+
+		midLayout2.getChildren().add(cp);
+		cp.setStyle("-fx-font-family:Time New Roman;-fx-font-size:15");
+
+		// Add item card to midLayout1
+		for (Item item : closed) {
+			HBox itemCard = new HBox(20);
 			// itemId
 			Text itemId = new Text(String.valueOf(item.getItemId()) + ".");
 
@@ -208,15 +265,12 @@ public class Client extends Application {
 			Text itemBid = new Text("Highest Bid:" + "someone rich guy's bid");
 			itemInfo.getChildren().addAll(itemTime, itemName, itemBid);
 
-			itemCard1.getChildren().addAll(itemId, itemImage, itemInfo);
+			itemCard.getChildren().addAll(itemId, itemImage, itemInfo);
 
-			midLayout1.getChildren().addAll(itemCard1);
+			midLayout1.getChildren().addAll(itemCard);
 		}
 
-		// Completed --> display closed items(history)
-		Label cp = new Label("[Completed]");
-
-		// right --> client info + client items
+		// Right --> client info + client items
 		VBox rightLayout = new VBox(20);
 		rightLayout.setPadding(new Insets(0, 0, 0, 10));
 		// client info
@@ -253,7 +307,7 @@ public class Client extends Application {
 		layout2.setCenter(midLayout);
 
 		layout2.setRight(rightLayout);
-		scene2 = new Scene(layout2, 900, 600);
+		scene2 = new Scene(layout2, 1000, 600);
 		scene2.getStylesheets().add("app.css");
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
