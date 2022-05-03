@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -62,18 +63,11 @@ public class Client extends Application {
 	public void start(Stage primaryStage) throws IOException {
 
 		// testing data
-		Item i1 = new Item(1, "Papi", 11.1, "Bob1",
-				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-		Item i2 = new Item(2, "Papi", 12.2, "Bob2",
-				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-		Item i3 = new Item(3, "Papi", 13.3, "Bob3",
-				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-		Item i4 = new Item(4, "Papi", 14.4, "Bob4",
-				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-		open.add(i1);
-		open.add(i2);
-		open.add(i3);
-		open.add(i4);
+		for (int i = 0; i < 10; i++) {
+			Item it = new Item(i, "Papi", i + 10, "Bob",
+					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+			open.add(it);
+		}
 
 		// 1. Welcome scene --> Greetings, get users name and password(no
 		// authentication)
@@ -170,10 +164,16 @@ public class Client extends Application {
 		leftLayout.getChildren().addAll(logo2, btnBox, exitBtn);
 
 		// middle --> displaying 2 sets sections --> ongoing/completed
+		// middle is Scrollable
+		ScrollPane midLayout = new ScrollPane();
+		midLayout.setPrefHeight(600);
 
 		VBox midLayout1 = new VBox(30); // ongoing
 		midLayout1.setPadding(new Insets(20));
+
 		VBox midLayout2 = new VBox(30); // completed
+
+		midLayout.setContent(midLayout1);
 
 		// Ongoing --> display opening items
 		Label og = new Label("< Ongoing >".toUpperCase());
@@ -214,7 +214,7 @@ public class Client extends Application {
 		layout2.setLeft(leftLayout);
 
 		// switching panes
-		layout2.setCenter(midLayout1);
+		layout2.setCenter(midLayout);
 
 		layout2.setRight(rightLayout);
 		scene2 = new Scene(layout2, 700, 600);
