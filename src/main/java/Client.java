@@ -15,10 +15,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Client extends Application {
@@ -29,10 +31,10 @@ public class Client extends Application {
 
 	// when the server update, all clients will get the updates
 	// track the latest commodities state
-	private ArrayList<Item> unsold;
+	private ArrayList<Item> open = new ArrayList<>();
 
 	// history
-	private ArrayList<Item> sold;
+	private ArrayList<Item> closed = new ArrayList<>();
 
 	// client --> server
 	// bids info = productId, clientInfo
@@ -58,6 +60,20 @@ public class Client extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws IOException {
+
+		// testing data
+		Item i1 = new Item(1, "Papi", 11.1, "Bob1",
+				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+		Item i2 = new Item(2, "Papi", 12.2, "Bob2",
+				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+		Item i3 = new Item(3, "Papi", 13.3, "Bob3",
+				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+		Item i4 = new Item(4, "Papi", 14.4, "Bob4",
+				"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
+		open.add(i1);
+		open.add(i2);
+		open.add(i3);
+		open.add(i4);
 
 		// 1. Welcome scene --> Greetings, get users name and password(no
 		// authentication)
@@ -118,6 +134,7 @@ public class Client extends Application {
 		// logo
 		Image Image2 = new Image("auctionlogo.png");
 		ImageView logoImg2 = new ImageView(Image);
+
 		logoImg2.setFitHeight(70);
 		logoImg2.setFitWidth(70);
 		logoImg2.setPreserveRatio(true);
@@ -146,22 +163,61 @@ public class Client extends Application {
 
 		btnBox.getChildren().addAll(onGoBtn, line, compBtn);
 
-		// butotn --> exit
+		// button --> exit
 		Button exitBtn = new Button("Exit");
 		exitBtn.setPrefWidth(100);
 
 		leftLayout.getChildren().addAll(logo2, btnBox, exitBtn);
 
-		// middle --> displaying items
-		VBox midLayout = new VBox();
+		// middle --> displaying 2 sets sections --> ongoing/completed
+
+		VBox midLayout1 = new VBox(30); // ongoing
+		midLayout1.setPadding(new Insets(20));
+		VBox midLayout2 = new VBox(30); // completed
+
+		// Ongoing --> display opening items
+		Label og = new Label("< Ongoing >".toUpperCase());
+		midLayout1.getChildren().add(og);
+		og.setStyle("-fx-font-family:Time New Roman;-fx-font-size:15");
+
+		// Add item card to midLayout1
+		for (Item item : open) {
+			HBox itemCard1 = new HBox();
+			// image + time + highest bid
+			// image
+			Image itemImg = new Image(item.getImage());
+			ImageView itemImage = new ImageView(itemImg);
+			itemImage.setFitHeight(100);
+			itemImage.setFitWidth(100);
+			itemImage.setPreserveRatio(true);
+
+			// time + highest bid
+			VBox itemInfo = new VBox(10);
+			itemInfo.setPadding(new Insets(0, 0, 0, 10));
+
+			Text itemTime = new Text("Remaining Time:" + "some time");
+			Text itemName = new Text(item.getName());
+			Text itemBid = new Text("Highest Bid:" + "someone rich guy's bid");
+			itemInfo.getChildren().addAll(itemTime, itemName, itemBid);
+
+			itemCard1.getChildren().addAll(itemImage, itemInfo);
+
+			midLayout1.getChildren().addAll(itemCard1);
+		}
+
+		// Completed --> display closed items(history)
+		Label cp = new Label("[Completed]");
 
 		// right --> user info
 		VBox rightLayout = new VBox();
 
 		layout2.setLeft(leftLayout);
-		layout2.setCenter(midLayout);
+
+		// switching panes
+		layout2.setCenter(midLayout1);
+
 		layout2.setRight(rightLayout);
-		scene2 = new Scene(layout2, 600, 500);
+		scene2 = new Scene(layout2, 700, 600);
 		scene2.getStylesheets().add("app.css");
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
@@ -178,7 +234,7 @@ public class Client extends Application {
 //		toServer = new ObjectOutputStream(s.getOutputStream());
 //
 //		try {
-//			unsold = (ArrayList<Item>) fromServer.readObject();
+//			open = (ArrayList<Item>) fromServer.readObject();
 //
 //			System.out.println(unsold.toString());
 //
@@ -193,7 +249,6 @@ public class Client extends Application {
 //		// decode data from server
 //		System.out.println("Closing sockets!");
 //		s.close();
-
 	}
 
 	public static void main(String[] args) {

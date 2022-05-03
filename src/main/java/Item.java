@@ -4,25 +4,25 @@ public class Item implements Serializable {
 	private Object _id; // _id
 	private int itemId; // commodity identifier
 	private String name; // record the commodity's name
-	private int bid; // start with base price, later record the highest bid
+	private double bid; // start with base price, later record the highest bid
 	private String bidder; // bidder with the highest price
 	private String image; // image url
 	private boolean sold; // default false, if sold --> true
 
-//	public Item(int itemId, String name, int bid, String bidder, String image) {
-//		this.itemId = itemId;
-//		this.name = name;
-//		this.bid = bid;
-//		this.bidder = bidder;
-//		this.image = image;
-//		this.sold = false;
-//	}
+	public Item(int itemId, String name, double bid, String bidder, String image) {
+		this.itemId = itemId;
+		this.name = name;
+		this.bid = bid;
+		this.bidder = bidder;
+		this.image = image;
+		this.sold = false;
+	}
 
 	public String getName() {
 		return name;
 	}
 
-	public int getBid() {
+	public double getBid() {
 		return bid;
 	}
 
