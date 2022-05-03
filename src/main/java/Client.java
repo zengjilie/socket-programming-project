@@ -27,16 +27,19 @@ import javafx.stage.Stage;
 public class Client extends Application {
 
 	// client information
-	private String userName;
-	private String userPassword;
+	private String clientName;
+	private String clientPassword;
 
 	// when the server update, all clients will get the updates
+
 	// track the latest commodities state
 	private ArrayList<Item> open = new ArrayList<>();
 
 	// history
 	private ArrayList<Item> closed = new ArrayList<>();
 
+	// client items
+	private ArrayList<Item> clientItems = new ArrayList<>();
 	// client --> server
 	// bids info = productId, clientInfo
 	// sever --> client
@@ -64,9 +67,10 @@ public class Client extends Application {
 
 		// testing data
 		for (int i = 0; i < 10; i++) {
-			Item it = new Item(i, "Papi", i + 10, "Bob",
+			Item item = new Item(i, "Papi", i + 10, "Bob",
 					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-			open.add(it);
+			open.add(item);
+			clientItems.add(item);
 		}
 
 		// 1. Welcome scene --> Greetings, get users name and password(no
@@ -103,10 +107,10 @@ public class Client extends Application {
 		Button btn1 = new Button("Submit");
 		btn1.setMaxWidth(200);
 		btn1.setOnAction(e -> {
-			userName = nameInput.getText();
-			userPassword = pwInput.getText();
-			System.out.println(userName);
-			System.out.println(userPassword);
+			clientName = nameInput.getText();
+			clientPassword = pwInput.getText();
+			System.out.println(clientName);
+			System.out.println(clientPassword);
 			primaryStage.setScene(scene2);
 		});
 
@@ -141,7 +145,7 @@ public class Client extends Application {
 
 		// bottons --> switching scene
 		VBox btnBox = new VBox(10);
-		Button onGoBtn = new Button("On Going");
+		Button onGoBtn = new Button("Open");
 		onGoBtn.setPrefHeight(100);
 		onGoBtn.setPrefWidth(100);
 
@@ -151,7 +155,7 @@ public class Client extends Application {
 		line.setEndX(100);
 		line.setEndY(0);
 
-		Button compBtn = new Button("Completed");
+		Button compBtn = new Button("Complet");
 		compBtn.setPrefHeight(100);
 		compBtn.setPrefWidth(100);
 
@@ -166,6 +170,7 @@ public class Client extends Application {
 		// middle --> displaying 2 sets sections --> ongoing/completed
 		// middle is Scrollable
 		ScrollPane midLayout = new ScrollPane();
+		midLayout.setStyle("-fx-background-color:transparent");
 		midLayout.setPrefHeight(600);
 
 		VBox midLayout1 = new VBox(30); // ongoing
@@ -176,13 +181,16 @@ public class Client extends Application {
 		midLayout.setContent(midLayout1);
 
 		// Ongoing --> display opening items
-		Label og = new Label("< Ongoing >".toUpperCase());
+		Label og = new Label("Open List".toUpperCase());
 		midLayout1.getChildren().add(og);
 		og.setStyle("-fx-font-family:Time New Roman;-fx-font-size:15");
 
 		// Add item card to midLayout1
 		for (Item item : open) {
-			HBox itemCard1 = new HBox();
+			HBox itemCard1 = new HBox(20);
+			// itemId
+			Text itemId = new Text(String.valueOf(item.getItemId()) + ".");
+
 			// image + time + highest bid
 			// image
 			Image itemImg = new Image(item.getImage());
@@ -200,7 +208,7 @@ public class Client extends Application {
 			Text itemBid = new Text("Highest Bid:" + "someone rich guy's bid");
 			itemInfo.getChildren().addAll(itemTime, itemName, itemBid);
 
-			itemCard1.getChildren().addAll(itemImage, itemInfo);
+			itemCard1.getChildren().addAll(itemId, itemImage, itemInfo);
 
 			midLayout1.getChildren().addAll(itemCard1);
 		}
@@ -208,8 +216,36 @@ public class Client extends Application {
 		// Completed --> display closed items(history)
 		Label cp = new Label("[Completed]");
 
-		// right --> user info
-		VBox rightLayout = new VBox();
+		// right --> client info + client items
+		VBox rightLayout = new VBox(20);
+		rightLayout.setPadding(new Insets(0, 0, 0, 10));
+		// client info
+		Label clientInfo = new Label("Bob");
+		clientInfo.setFont(new Font("Times New Roman", 20));
+
+		// line
+		Line line2 = new Line();
+		line2.setStartX(0);
+		line2.setStartY(0);
+		line2.setEndX(120);
+		line2.setEndY(0);
+
+		// client items
+		ScrollPane sp2 = new ScrollPane();
+		sp2.setStyle("-fx-background-color:transparent");
+		VBox clientItemList = new VBox(20);
+		Label clListTitle = new Label("Your Items");
+		clListTitle.setFont(new Font("Times New Roman", 20));
+
+		for (Item item : clientItems) {
+			Text itemName = new Text(item.getName());
+			// format currency ...
+			Text itemPrice = new Text(String.valueOf(item.getBid()));
+			clientItemList.getChildren().addAll(itemName, itemPrice);
+		}
+
+		rightLayout.getChildren().addAll(clientInfo, line2, clListTitle, sp2);
+		sp2.setContent(clientItemList);
 
 		layout2.setLeft(leftLayout);
 
@@ -217,7 +253,7 @@ public class Client extends Application {
 		layout2.setCenter(midLayout);
 
 		layout2.setRight(rightLayout);
-		scene2 = new Scene(layout2, 700, 600);
+		scene2 = new Scene(layout2, 900, 600);
 		scene2.getStylesheets().add("app.css");
 
 		primaryStage.setTitle("Virtual Auction"); // Set the stage title
