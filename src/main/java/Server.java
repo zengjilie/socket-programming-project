@@ -33,8 +33,13 @@ public class Server extends Observable {
 	// uri
 	private String uri = "mongodb+srv://test:test@cluster0.2lpk4.mongodb.net/AuctionDatabase?retryWrites=true&w=majority";
 
-	// record client names
-	private ArrayList<String> clientList = new ArrayList<>();
+	// record client count
+	int clientCount = 0;
+
+	public static void main(String[] args) throws IOException {
+		Server server = new Server();
+		server.SetupNetworking();
+	}
 
 	private void SetupNetworking() throws IOException {
 
@@ -49,7 +54,6 @@ public class Server extends Observable {
 			while (iter.hasNext()) {
 				Document doc = iter.next();
 				String s = doc.toJson();
-//				System.out.println(s);
 
 				// convert Json to Java object
 				ObjectMapper mapper = new ObjectMapper();
@@ -57,7 +61,6 @@ public class Server extends Observable {
 					Item it = mapper.readValue(s, Item.class);
 
 					// Store items in list
-					itemList.add(it);
 
 				} catch (JsonMappingException e) {
 					// TODO Auto-generated catch block
@@ -72,6 +75,7 @@ public class Server extends Observable {
 
 		int port = 5000;
 
+		// Start server
 		try {
 			ss = new ServerSocket(port);
 			System.out.println("Server started waiting for connection !");
@@ -80,11 +84,11 @@ public class Server extends Observable {
 				// Waiting for connections ...
 				Socket s = ss.accept();
 
-				// Add new Client[info] to client list...
+				// Add new observer
+				ClientObserver co = new ClientObserver(s.getOutpuStream());
 
-				// Print the number of connected clients
-				System.out.println("New connection !" + clientList.size());
-
+				clientCount++;
+				System.out.println(clientCount + " clients connected!");
 				// Send auction items data to clients...
 
 				// Create new thread for that client
@@ -103,12 +107,6 @@ public class Server extends Observable {
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
-		Server server = new Server();
-		server.SetupNetworking();
-//		server.populateItems();
-	}
-
 	class ClientHandler implements Runnable {
 		private Socket s;
 //		private ClientObserver writer; // See Canvas. Extends ObjectOutputStream,
@@ -122,7 +120,6 @@ public class Server extends Observable {
 
 		public ClientHandler(Socket s) {
 			this.s = s;
-//			writer = new ClientObserver(s.getOutputStream());
 		}
 //
 
@@ -135,32 +132,13 @@ public class Server extends Observable {
 				toClient = new ObjectOutputStream(os);
 				fromClient = new ObjectInputStream(is);
 
-				// send itemList --> client
 				toClient.writeObject(itemList);
-				System.out.println("itemList has been sent to client!");
 
-				// Get client bid info <-- client
-				Bid clientBid = (Bid) fromClient.readObject();
-
-				System.out.println("Got bid info from client!");
-				System.out.println(clientBid.clientName);
-				System.out.println(clientBid.clientBid);
-				System.out.println(clientBid.itemId);
-
-				// Change the info of that item
-				for (Item item : itemList) {
-					if (clientBid.itemId == item.getItemId()) {
-						item.setBid(clientBid.clientBid);
-						item.setBidder(clientBid.clientName);
-					}
-				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				System.out.println("IO exception!");
-			} catch (ClassNotFoundException e) {
-				System.out.println("Can't find class Bid!");
+				e.printStackTrace();
 			}
 
 		}
 	}
+
 }

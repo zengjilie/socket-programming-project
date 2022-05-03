@@ -76,7 +76,6 @@ public class Client extends Application {
 //			clientItems.add(item);
 //			closed.add(item);
 //		}
-
 		// real data
 		// Create a socket to connect to the server
 		String serverIP = "localhost"; // change [localhost] to actual server IP
@@ -86,7 +85,6 @@ public class Client extends Application {
 		// client <--> server data exchange
 		fromServer = new ObjectInputStream(s.getInputStream());
 		toServer = new ObjectOutputStream(s.getOutputStream());
-
 		try {
 			open = (ArrayList<Item>) fromServer.readObject();
 		} catch (ClassNotFoundException e) {
