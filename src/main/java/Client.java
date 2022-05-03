@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -71,6 +72,7 @@ public class Client extends Application {
 					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
 			open.add(item);
 			clientItems.add(item);
+			closed.add(item);
 		}
 
 		// 1. Welcome scene --> Greetings, get users name and password(no
@@ -143,11 +145,12 @@ public class Client extends Application {
 		logo2.setAlignment(Pos.CENTER);
 		logo2.getChildren().addAll(logoImg2, logoTxt2);
 
-		// Bottons --> switching different item lists
+		// Buttons --> switching different item lists
+		// open button
 		VBox btnBox = new VBox(10);
-		Button onGoBtn = new Button("Open");
-		onGoBtn.setPrefHeight(100);
-		onGoBtn.setPrefWidth(100);
+		Button openBtn = new Button("Open");
+		openBtn.setPrefHeight(100);
+		openBtn.setPrefWidth(100);
 		// line
 		Line line = new Line();
 		line.setStartX(0);
@@ -156,13 +159,10 @@ public class Client extends Application {
 		line.setEndY(0);
 		// complete button
 		Button compBtn = new Button("Complete");
-		compBtn.setOnAction(e -> {
-			System.out.println("show complete items");
-		});
 		compBtn.setPrefHeight(100);
 		compBtn.setPrefWidth(100);
 
-		btnBox.getChildren().addAll(onGoBtn, line, compBtn);
+		btnBox.getChildren().addAll(openBtn, line, compBtn);
 
 		// button --> exit
 		Button exitBtn = new Button("Exit");
@@ -176,27 +176,36 @@ public class Client extends Application {
 		midLayout.setStyle("-fx-background-color:transparent");
 		midLayout.setPrefHeight(600);
 
-		// completed item list
-		VBox midLayout2 = new VBox(30);
-		midLayout2.setPadding(new Insets(20));
-
 		// open item list
 		VBox midLayout1 = new VBox(30);
 		midLayout1.setPadding(new Insets(20));
 
-		// use setContent to change mount/unmount different nodes
-		midLayout.setContent(midLayout1);
+		// complete item list
+		VBox midLayout2 = new VBox(30);
+		midLayout2.setPadding(new Insets(20));
 
-		// Ongoing --> display opening items
-		Label og = new Label("Open List".toUpperCase());
-		midLayout1.getChildren().add(og);
-		og.setFont(new Font("Times New Roman", 20));
+		// use setContent to change open/complete different nodes
+		// default open
+		midLayout.setContent(midLayout1);
+		// switching open/complete
+		openBtn.setOnAction(e -> {
+			// see open item list
+			midLayout.setContent(midLayout1);
+		});
+		compBtn.setOnAction(e -> {
+			midLayout.setContent(midLayout2);
+		});
+
+		// open --> display opening items
+		Label op = new Label("Open List".toUpperCase());
+		midLayout1.getChildren().add(op);
+		op.setFont(new Font("Times New Roman", 20));
 
 		// Add item card to midLayout1
 		for (Item item : open) {
 			HBox itemCard = new HBox(20);
 			// itemId
-			Text itemId = new Text(String.valueOf(item.getItemId()) + ".");
+			Text itemId = new Text("Id: " + String.valueOf(item.getItemId()));
 
 			// image + time + highest bid
 			// image
@@ -235,39 +244,41 @@ public class Client extends Application {
 			midLayout1.getChildren().addAll(itemCard);
 		}
 
-		// Completed --> display closed items(History)
-		Label cp = new Label("Complete".toUpperCase());
+		// Completed item list
+
+		// Completed --> display completed items
+		Label cp = new Label("Complete list".toUpperCase());
+		cp.setFont(new Font("Times New Roman", 20));
 //		midLayout.setContent(midLayout2);
 
 		midLayout2.getChildren().add(cp);
-		cp.setStyle("-fx-font-family:Time New Roman;-fx-font-size:15");
 
-		// Add item card to midLayout1
+		// Add item card to midLayout2
 		for (Item item : closed) {
 			HBox itemCard = new HBox(20);
 			// itemId
-			Text itemId = new Text(String.valueOf(item.getItemId()) + ".");
+			Text itemId = new Text(String.valueOf("Id: " + item.getItemId()));
 
 			// image + time + highest bid
 			// image
 			Image itemImg = new Image(item.getImage());
 			ImageView itemImage = new ImageView(itemImg);
-			itemImage.setFitHeight(100);
-			itemImage.setFitWidth(100);
+			itemImage.setFitHeight(150);
+			itemImage.setFitWidth(150);
 			itemImage.setPreserveRatio(true);
 
 			// time + highest bid
 			VBox itemInfo = new VBox(10);
 			itemInfo.setPadding(new Insets(0, 0, 0, 10));
 
-			Text itemTime = new Text("Remaining Time:" + "some time");
 			Text itemName = new Text(item.getName());
-			Text itemBid = new Text("Highest Bid:" + "someone rich guy's bid");
-			itemInfo.getChildren().addAll(itemTime, itemName, itemBid);
+			Text itemBid = new Text("Final price: " + item.getBid());
+			Text itemBidder = new Text("Buyer: " + "Judy");
+			itemInfo.getChildren().addAll(itemName, itemBid, itemBidder);
 
 			itemCard.getChildren().addAll(itemId, itemImage, itemInfo);
 
-			midLayout1.getChildren().addAll(itemCard);
+			midLayout2.getChildren().addAll(itemCard);
 		}
 
 		// Right --> client info + client items
@@ -281,7 +292,7 @@ public class Client extends Application {
 		Line line2 = new Line();
 		line2.setStartX(0);
 		line2.setStartY(0);
-		line2.setEndX(120);
+		line2.setEndX(160);
 		line2.setEndY(0);
 
 		// client items
@@ -315,30 +326,32 @@ public class Client extends Application {
 		primaryStage.show(); // Display the stage
 
 		// Create a socket to connect to the server
-//		String serverIP = "localhost"; // change [localhost] to actual IP address
-//		s = new Socket(serverIP, 5000);
-//		System.out.println("New client created!");
-//
-//		// client <--> server data exchange
-//		fromServer = new ObjectInputStream(s.getInputStream());
-//		toServer = new ObjectOutputStream(s.getOutputStream());
-//
-//		try {
-//			open = (ArrayList<Item>) fromServer.readObject();
-//
-//			System.out.println(unsold.toString());
-//
-//			// UI
-//			// Display section
-//
-//			//
-//		} catch (ClassNotFoundException e) {
-//			e.printStackTrace();
-//		}
-//
-//		// decode data from server
-//		System.out.println("Closing sockets!");
-//		s.close();
+		String serverIP = "localhost"; // change [localhost] to actual IP address
+		s = new Socket(serverIP, 5000);
+		System.out.println("New client created!");
+
+		// client <--> server data exchange
+		fromServer = new ObjectInputStream(s.getInputStream());
+		toServer = new ObjectOutputStream(s.getOutputStream());
+
+		try {
+			open = (ArrayList<Item>) fromServer.readObject();
+
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// decode data from server
+		System.out.println("Closing sockets!");
+		exitBtn.setOnAction(e -> {
+			try {
+				s.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			Platform.exit();
+		});
 	}
 
 	public static void main(String[] args) {
