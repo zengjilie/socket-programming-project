@@ -68,14 +68,6 @@ public class Client extends Application {
 	@Override
 	public void start(Stage primaryStage) throws IOException {
 
-		// testing data
-//		for (int i = 0; i < 10; i++) {
-//			Item item = new Item(i, "Papi", i + 10, "Bob",
-//					"https://im.indiatimes.in/photogallery/2021/Jul/1afp_60ed83c04c151.jpg?w=600&h=450&cc=1");
-//			open.add(item);
-//			clientItems.add(item);
-//			closed.add(item);
-//		}
 		// real data
 		// Create a socket to connect to the server
 		String serverIP = "localhost"; // change [localhost] to actual server IP
@@ -272,7 +264,7 @@ public class Client extends Application {
 						bidWarning.setText("Bid not big enough!");
 					} else {
 						// send bid info to server --> server update all clients
-						Bid newBid = new Bid(item.getItemId(), bidAmount, clientName);
+						Bid newBid = new Bid(item.getItemId(), bidAmount, clientName, item.getName());
 						toServer.writeObject(newBid);
 					}
 				} catch (NumberFormatException ex) {
