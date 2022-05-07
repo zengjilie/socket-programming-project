@@ -7,3 +7,10 @@
 	-fx-background-color:#424242;
 	-fx-cursor:hand;
 }
+
+#pane{
+	-fx-background-image: url("bg.jpeg");
+    -fx-background-repeat: stretch;   
+    -fx-background-size: 900 506;
+    -fx-background-position: center center;
+}

@@ -35,7 +35,37 @@ public class Server extends Observable {
 	// clientHanlders
 	static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
 
+	static int min = 5;
+	static int sec = 0;
+	static boolean ongoing = true;
+
 	private void SetupNetworking() throws IOException {
+		Thread t1 = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+					if (sec == 0) {
+						sec = 60;
+						min--;
+					}
+					sec--;
+					if (sec == 0 && min == 0) {
+						ongoing = false;
+						break;
+					}
+					System.out.println("mins: " + min + " secs: " + sec);
+				}
+			};
+
+		});
+		t1.start();
 
 		// Request data from MongoDB database, store on server
 		try (MongoClient mongoClient = MongoClients.create(uri)) {
@@ -97,8 +127,8 @@ public class Server extends Observable {
 
 	class ClientHandler implements Runnable {
 		private Socket socket;
-		private ObjectOutputStream toClient;
-		private ObjectInputStream fromClient;
+		public ObjectOutputStream toClient;
+		public ObjectInputStream fromClient;
 
 		public ClientHandler(Socket s) throws IOException {
 			socket = s;
@@ -110,6 +140,22 @@ public class Server extends Observable {
 		public void run() {
 			try {
 				toClient.writeObject(itemList);
+//				Thread t = new Thread(new Runnable() {
+//					@Override
+//					public void run() {
+//						while (ongoing) {
+//							try {
+//								Thread.sleep(5000);
+//							} catch (InterruptedException e) {
+//
+//								e.printStackTrace();
+//							}
+//
+//						}
+//					}
+//
+//				});
+//				t.start();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -128,11 +174,12 @@ public class Server extends Observable {
 
 					System.out.println(itemList.get(2).getBidder());
 					System.out.println(itemList.get(2).getBid());
+					System.out.println(clientHandlers.size() + "clients");
 
 					// broadcast new itemList
 					for (ClientHandler c : clientHandlers) {
 						c.toClient.writeObject(itemList);
-						System.out.println("good");
+						System.out.println("cast!!!");
 					}
 
 				} catch (IOException e) {
@@ -145,7 +192,6 @@ public class Server extends Observable {
 			}
 
 			clientHandlers.remove(this);
-			System.out.println("client removed");
 		}
 
 		public void removeClientHandler() {

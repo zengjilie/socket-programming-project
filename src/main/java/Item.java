@@ -9,15 +9,6 @@ public class Item implements Serializable {
 	private String image; // image url
 	private boolean sold; // default false, if sold --> true
 
-//	public Item(int itemId, String name, double bid, String bidder, String image) {
-//		this.itemId = itemId;
-//		this.name = name;
-//		this.bid = bid;
-//		this.bidder = bidder;
-//		this.image = image;
-//		this.sold = false;
-//	}
-
 	public String getName() {
 		return name;
 	}
@@ -68,5 +59,9 @@ public class Item implements Serializable {
 
 	public void setSold(boolean sold) {
 		this.sold = sold;
+	}
+
+	public boolean getSold() {
+		return sold;
 	}
 }

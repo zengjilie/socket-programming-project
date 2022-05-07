@@ -1,7 +1,9 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -21,7 +23,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -30,64 +33,55 @@ import javafx.stage.Stage;
 public class Client extends Application {
 
 	// client information
-	private String clientName = "Bob";
-	private String clientPassword;
+	private static String clientName;
+	private static String clientPassword;
 
 	// when the server update, all clients will get the updates
 
 	// track the latest commodities state
-	private ArrayList<Item> open = new ArrayList<>();
-
-	// history
-	private ArrayList<Item> closed = new ArrayList<>();
-
-	// client items
-	private ArrayList<Item> clientItems = new ArrayList<>();
-	// client --> server
-	// bids info = productId, clientInfo
-	// sever --> client
-	// success --> new status
-	// fail --> reasons
+	private static ArrayList<Item> open = new ArrayList<>();
+	private static ArrayList<Item> closed = new ArrayList<>();
+	private static ArrayList<Bid> clientItems = new ArrayList<>();
 
 	// I/O streams
-	ObjectOutputStream toServer = null;
-	ObjectInputStream fromServer = null;
+	private static ObjectOutputStream toServer = null;
+	private static ObjectInputStream fromServer = null;
 
-//	@Override
-//	public void update(Observable o, Object arg) {
-//		// TODO Auto-generated method stub
-//		System.out.println("test");
-//	}
-//
-	Socket s;
+	private static Socket socket = null;
 
 	// Scene
 	Scene scene1;
 	Scene scene2;
 
+	// important layouts
+	private static BorderPane layout2 = new BorderPane();
+	private static ScrollPane midLayout = new ScrollPane();
+
+	private static VBox midLayout1 = new VBox();
+	private static VBox midLayout2 = new VBox();
+
+	ScrollPane sp2 = new ScrollPane();
+
+	VBox clientItemList = new VBox(20);
+
+	MediaPlayer mediaPlayer;
+	// button
+	Button openBtn = new Button("Open");
+	Button compBtn = new Button("Complete");
+
+	static boolean isMute = true;
+	// thread
+	Thread inputWait = null;
+
 	@Override
 	public void start(Stage primaryStage) throws IOException {
 
-		// real data
-		// Create a socket to connect to the server
-		String serverIP = "localhost"; // change [localhost] to actual server IP
-		s = new Socket(serverIP, 5000);
-		System.out.println("New client created!");
-
-		// client <--> server data exchange
-		fromServer = new ObjectInputStream(s.getInputStream());
-		toServer = new ObjectOutputStream(s.getOutputStream());
-		try {
-			open = (ArrayList<Item>) fromServer.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		// 1. Welcome scene --> Greetings, get users name and password(no
-		// authentication)
+		// Scene 1
 		VBox layout1 = new VBox(20);
 
-		// logo
+		playMusic();
+
+		// Logo
 		Image Image = new Image("auctionlogo.png");
 		ImageView logoImg = new ImageView(Image);
 		logoImg.setFitHeight(100);
@@ -119,29 +113,56 @@ public class Client extends Application {
 		btn1.setOnAction(e -> {
 			clientName = nameInput.getText();
 			clientPassword = pwInput.getText();
-			System.out.println(clientName);
-			System.out.println(clientPassword);
+
+			try {
+				loadScene2();
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+
 			primaryStage.setScene(scene2);
+
 		});
 
 		layout1.setPadding(new Insets(80));
 		layout1.setAlignment(Pos.TOP_CENTER);
+		layout1.setId("pane");
 		layout1.getChildren().addAll(logo, nameInput, pwInput, btn1);
 
-		scene1 = new Scene(layout1, 400, 500, Color.WHITE);
+		scene1 = new Scene(layout1, 400, 500);
+		scene1.getStylesheets().addAll(this.getClass().getResource("app.css").toExternalForm());
 
-		// 2. main scene, controller
-		BorderPane layout2 = new BorderPane();
+		primaryStage.setTitle("Virtual Auction");
+		primaryStage.setScene(scene1);
+		primaryStage.show();
+
+	}
+
+	public void loadScene2() throws IOException {
+
+		// connect to server
+		String serverIP = "localhost";
+		try {
+			socket = new Socket(serverIP, 5000);
+			toServer = new ObjectOutputStream(socket.getOutputStream());
+			fromServer = new ObjectInputStream(socket.getInputStream());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		// Controller
 		layout2.setPadding(new Insets(20));
 
-		// left -->
+		// left
 		VBox leftLayout = new VBox(80);
 		leftLayout.setPadding(new Insets(0, 10, 0, 0));
 		leftLayout.setStyle("-fx-border-color:black;-fx-border-width:0 1 0 0");
 
 		// logo
 		Image Image2 = new Image("auctionlogo.png");
-		ImageView logoImg2 = new ImageView(Image);
+		ImageView logoImg2 = new ImageView(Image2);
 
 		logoImg2.setFitHeight(70);
 		logoImg2.setFitWidth(70);
@@ -153,10 +174,9 @@ public class Client extends Application {
 		logo2.setAlignment(Pos.CENTER);
 		logo2.getChildren().addAll(logoImg2, logoTxt2);
 
-		// Buttons --> switching different item lists
+		// Buttons --> switch between
 		// open button
 		VBox btnBox = new VBox(10);
-		Button openBtn = new Button("Open");
 		openBtn.setPrefHeight(100);
 		openBtn.setPrefWidth(100);
 		// line
@@ -166,40 +186,156 @@ public class Client extends Application {
 		line.setEndX(100);
 		line.setEndY(0);
 		// complete button
-		Button compBtn = new Button("Complete");
 		compBtn.setPrefHeight(100);
 		compBtn.setPrefWidth(100);
 
 		btnBox.getChildren().addAll(openBtn, line, compBtn);
 
+		// mute
+		Button muteBtn = new Button("Mute");
+		muteBtn.setPrefWidth(100);
+
+		muteBtn.setOnAction(e -> {
+			isMute = !isMute;
+			if (isMute) {
+				muteBtn.setText("unMute");
+			} else {
+				muteBtn.setText("Mute");
+			}
+			mediaPlayer.setMute(isMute);
+		});
+
 		// button --> exit
 		Button exitBtn = new Button("Exit");
 		exitBtn.setPrefWidth(100);
 
-		leftLayout.getChildren().addAll(logo2, btnBox, exitBtn);
+		leftLayout.getChildren().addAll(logo2, btnBox, muteBtn, exitBtn);
 
 		// middle --> displaying 2 sets sections --> ongoing/completed
 		// middle is Scrollable
-		ScrollPane midLayout = new ScrollPane();
 		midLayout.setStyle("-fx-background-color:transparent");
 		midLayout.setPrefHeight(600);
 
-		// open item list
-		VBox midLayout1 = new VBox(30);
+		// render item list --> thread
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				Runnable render = new Runnable() {
+					@Override
+					public void run() {
+						render();
+					}
+
+				};
+
+				while (socket.isConnected()) {
+					try {
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+
+						open = (ArrayList<Item>) fromServer.readObject();
+
+						System.out.println(open.get(2).getBidder());
+						System.out.println(open.get(2).getBid());
+
+						Platform.runLater(render);
+					} catch (IOException e) {
+						e.printStackTrace();
+						break;
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+						break;
+					}
+
+				}
+
+				try {
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+		});
+
+		t.setDaemon(true);
+		t.start();
+
+		// Right --> client info + client items
+		VBox rightLayout = new VBox(20);
+		rightLayout.setPadding(new Insets(0, 0, 0, 10));
+		// client info
+		Label clientInfo = new Label(clientName);
+		clientInfo.setFont(new Font("Times New Roman", 20));
+
+		// line
+		Line line2 = new Line();
+		line2.setStartX(0);
+		line2.setStartY(0);
+		line2.setEndX(160);
+		line2.setEndY(0);
+
+		// client items
+		sp2.setStyle("-fx-background-color:transparent");
+		sp2.setPrefHeight(600);
+		Label clListTitle = new Label("Your Items");
+		clListTitle.setFont(new Font("Times New Roman", 20));
+
+		for (Bid item : clientItems) {
+
+			Text itemName = new Text("Name: " + item.itemName);
+			// format currency ...
+			Locale locale = new Locale("en", "US");
+			NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+			Text itemPrice = new Text("Your Bid: " + formatter.format(item.clientBid));
+
+			clientItemList.getChildren().addAll(itemName, itemPrice);
+		}
+
+		rightLayout.getChildren().addAll(clientInfo, line2, clListTitle, sp2);
+		sp2.setContent(clientItemList);
+
+		layout2.setLeft(leftLayout);
+		layout2.setRight(rightLayout);
+
+		scene2 = new Scene(layout2, 1200, 600);
+		scene2.getStylesheets().add("app.css");
+
+		// decode data from server
+
+		exitBtn.setOnAction(e -> {
+			try {
+				System.out.println("Client socket closed!");
+				socket.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			Platform.exit();
+		});
+
+	}
+
+	public void render() {
+		midLayout1 = new VBox(30);
 		midLayout1.setPadding(new Insets(20));
 
 		// complete item list
-		VBox midLayout2 = new VBox(30);
+		midLayout2 = new VBox(30);
 		midLayout2.setPadding(new Insets(20));
 
 		// use setContent to change open/complete different nodes
-		// default open
-		midLayout.setContent(midLayout1);
 		// switching open/complete
+
 		openBtn.setOnAction(e -> {
 			// see open item list
 			midLayout.setContent(midLayout1);
 		});
+
 		compBtn.setOnAction(e -> {
 			midLayout.setContent(midLayout2);
 		});
@@ -211,6 +347,9 @@ public class Client extends Application {
 
 		// Add item card to midLayout1
 		for (Item item : open) {
+			if (!item.getSold()) {
+
+			}
 			HBox itemCard = new HBox(20);
 			// id + image + info + button
 			// itemId
@@ -238,7 +377,7 @@ public class Client extends Application {
 			NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
 			Text itemBid = new Text("Highest Bid: " + formatter.format(bid));
 			// bidder
-			Text itemBidder = new Text("Bidder: " + "N/A");
+			Text itemBidder = new Text("Bidder: " + item.getBidder());
 			itemInfo.getChildren().addAll(itemTime, itemName, itemBid, itemBidder);
 
 			// Get bid from client
@@ -265,7 +404,23 @@ public class Client extends Application {
 					} else {
 						// send bid info to server --> server update all clients
 						Bid newBid = new Bid(item.getItemId(), bidAmount, clientName, item.getName());
+						clientItems.add(newBid);
+
+						clientItemList.getChildren().clear();
+
+						for (Bid it : clientItems) {
+							Text itName = new Text("Item: " + it.itemName);
+							// format currency ...
+							Locale locale2 = new Locale("en", "US");
+							NumberFormat formatter2 = NumberFormat.getCurrencyInstance(locale2);
+							Text itPrice = new Text("Your Bid: " + formatter.format(it.clientBid));
+
+							clientItemList.getChildren().addAll(itName, itPrice);
+						}
+
+						// rerender
 						toServer.writeObject(newBid);
+
 					}
 				} catch (NumberFormatException ex) {
 					bidWarning.setText("Input Must Be a Number!");
@@ -281,12 +436,9 @@ public class Client extends Application {
 			midLayout1.getChildren().addAll(itemCard);
 		}
 
-		// Completed item list
-
 		// Completed --> display completed items
 		Label cp = new Label("Complete list".toUpperCase());
 		cp.setFont(new Font("Times New Roman", 20));
-//		midLayout.setContent(midLayout2);
 
 		midLayout2.getChildren().add(cp);
 
@@ -316,7 +468,8 @@ public class Client extends Application {
 			NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
 			Text itemBid = new Text("Highest Bid: " + formatter.format(bid));
 			// bidder
-			Text itemBidder = new Text("Buyer: " + "Judy");
+			Text itemBidder = new Text("Buyer: " + item.getBidder());
+
 			itemInfo.getChildren().addAll(itemName, itemBid, itemBidder);
 
 			itemCard.getChildren().addAll(itemId, itemImage, itemInfo);
@@ -324,61 +477,17 @@ public class Client extends Application {
 			midLayout2.getChildren().addAll(itemCard);
 		}
 
-		// Right --> client info + client items
-		VBox rightLayout = new VBox(20);
-		rightLayout.setPadding(new Insets(0, 0, 0, 10));
-		// client info
-		Label clientInfo = new Label(clientName);
-		clientInfo.setFont(new Font("Times New Roman", 20));
-
-		// line
-		Line line2 = new Line();
-		line2.setStartX(0);
-		line2.setStartY(0);
-		line2.setEndX(160);
-		line2.setEndY(0);
-
-		// client items
-		ScrollPane sp2 = new ScrollPane();
-		sp2.setStyle("-fx-background-color:transparent");
-		VBox clientItemList = new VBox(20);
-		Label clListTitle = new Label("Your Items");
-		clListTitle.setFont(new Font("Times New Roman", 20));
-
-		for (Item item : clientItems) {
-			Text itemName = new Text("Name: " + item.getName());
-			// format currency ...
-			Text itemPrice = new Text(String.valueOf(item.getBid()));
-			clientItemList.getChildren().addAll(itemName, itemPrice);
-		}
-
-		rightLayout.getChildren().addAll(clientInfo, line2, clListTitle, sp2);
-		sp2.setContent(clientItemList);
-
-		layout2.setLeft(leftLayout);
-
-		// switching panes
+		midLayout.setContent(midLayout1);
 		layout2.setCenter(midLayout);
+	}
 
-		layout2.setRight(rightLayout);
-		scene2 = new Scene(layout2, 1200, 600);
-		scene2.getStylesheets().add("app.css");
-
-		primaryStage.setTitle("Virtual Auction"); // Set the stage title
-		primaryStage.setScene(scene2); // Place the scene in the stage
-		primaryStage.show(); // Display the stage
-
-		// decode data from server
-		exitBtn.setOnAction(e -> {
-			try {
-				System.out.println("Client socket closed!");
-				s.close();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			Platform.exit();
-		});
+	private void playMusic() {
+		String path = getClass().getResource("music.mp3").getPath();
+		Media media = new Media(new File(path).toURI().toString());
+		mediaPlayer = new MediaPlayer(media);
+		mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+		mediaPlayer.play();
+		mediaPlayer.setMute(isMute);
 	}
 
 	public static void main(String[] args) {
