@@ -2,9 +2,12 @@
 
 ## Tech Stack
 
-Front End: JavaFX
+Front End: JavaFX(Planning on switching to React)
 
 Backend: Java Socket, MongoDB, Maven
+
+## Demo
+![image](./image.png)
 
 ## Auction items database
 * name (String)
@@ -13,4 +16,5 @@ Backend: Java Socket, MongoDB, Maven
 * bidder (String)
 * image (String)
 * sold (boolean) 
- 
+
+There are still some bugs :(
